@@ -6,12 +6,12 @@ fn main() {
         .contains("shuttle")
     {
         if !std::process::Command::new("apt")
+            .arg("install")
+            .arg("-y")
             .arg("software-properties-common").status().expect("Failed to install apt tools").success() {
         }
 
         if !std::process::Command::new("add-apt-repository")
-            .arg("install")
-            .arg("-y")
             .arg("ppa:tomtomtom/yt-dlp").status().expect("Failed to add repo").success() {
         }
 
