@@ -8,15 +8,21 @@ fn main() {
         if !std::process::Command::new("apt")
             .arg("install")
             .arg("-y")
-            .arg("software-properties-common").status().expect("Failed to install apt tools").success() {
+            .arg("software-properties-common").status().expect("Failed to run apt").success() {
+
+            panic!("Failed to install apt tools");
         }
 
         if !std::process::Command::new("add-apt-repository")
-            .arg("ppa:tomtomtom/yt-dlp").status().expect("Failed to add repo").success() {
+            .arg("ppa:tomtomtom/yt-dlp").status().expect("Failed to run add-apt-repository").success() {
+            
+            panic!("Failed to add repo");
         }
 
         if !std::process::Command::new("apt")
             .arg("update").status().expect("Failed to update package list").success() {
+
+            panic!("Failed to Update package list");
         }
 
         if !std::process::Command::new("apt")
