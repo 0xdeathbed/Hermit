@@ -5,6 +5,15 @@ fn main() {
         .unwrap_or_default()
         .contains("shuttle")
     {
+
+        if !std::process::Command::new("add-apt-repository")
+            .arg("ppa:tomtomtom/yt-dlp").status().expect("Failed to add repo").success() {
+        }
+
+        if !std::process::Command::new("apt")
+            .arg("update").status().expect("Failed to update package list").success() {
+        }
+
         if !std::process::Command::new("apt")
             .arg("install")
             .arg("-y")
