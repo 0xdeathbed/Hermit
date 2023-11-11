@@ -5,6 +5,9 @@ fn main() {
         .unwrap_or_default()
         .contains("shuttle")
     {
+        if !std::process::Command::new("apt")
+            .arg("software-properties-common").status().expect("Failed to install apt tools").success() {
+        }
 
         if !std::process::Command::new("add-apt-repository")
             .arg("ppa:tomtomtom/yt-dlp").status().expect("Failed to add repo").success() {
