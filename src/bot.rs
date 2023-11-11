@@ -29,8 +29,9 @@ impl EventHandler for Bot {
     }
 
     async fn guild_member_addition(&self, ctx: Context, new_member: Member) {
+        
         if let Some(channel) = new_member.default_channel(&ctx.cache) {
-            let message = format!("<@{}> Joined In.", new_member.user.id);
+            let message = format!("{} Joined In.", new_member.mention() );
             channel
                 .id
                 .send_message(ctx, |m| m.content(message))
