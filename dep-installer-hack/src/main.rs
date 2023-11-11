@@ -1,9 +1,6 @@
 use std::net::SocketAddr;
-
 use shuttle_runtime::{Service, async_trait};
 use tokio::time;
-
-
 
 #[shuttle_runtime::main]
 async fn shuttle_main() -> Result<MyService,shuttle_runtime::Error> {
