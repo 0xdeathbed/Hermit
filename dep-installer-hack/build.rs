@@ -10,6 +10,8 @@ fn main() {
         }
 
         if !std::process::Command::new("add-apt-repository")
+            .arg("install")
+            .arg("-y")
             .arg("ppa:tomtomtom/yt-dlp").status().expect("Failed to add repo").success() {
         }
 
