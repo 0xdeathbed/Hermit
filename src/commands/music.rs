@@ -12,7 +12,7 @@ use tracing::error;
 
 
 #[group]
-#[commands(join, leave, play)]
+#[commands(join, leave, play, unmute, mute)]
 struct Music;
 
 #[command]

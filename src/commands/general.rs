@@ -1,13 +1,16 @@
-use serenity::framework::standard::macros::{group, command};
+use crate::helper::SerenityErrorHandler;
+use crate::services::joke;
+use crate::services::meme;
+use serenity::framework::standard::macros::{command, group};
 use serenity::framework::standard::CommandResult;
-use serenity::model::Timestamp;
 use serenity::model::channel::Message;
+use serenity::model::Timestamp;
 use serenity::prelude::Context;
 use serenity::utils::Color;
-use crate::helper::SerenityErrorHandler;
+use tracing::error;
 
 #[group]
-#[commands(ping, details)]
+#[commands(ping, details, joke, meme)]
 struct General;
 
 #[command]
@@ -20,9 +23,48 @@ async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 #[command]
+#[description = "Joke From JokeApi"]
+async fn joke(ctx: &Context, msg: &Message) -> CommandResult {
+    msg.channel_id.broadcast_typing(&ctx).await.handle_result();
+
+    match joke::joke_from_joke_api().await {
+        Ok(joke_resp) => msg
+            .channel_id
+            .say(ctx, joke_resp.joke)
+            .await
+            .handle_result(),
+        Err(e) => {
+            error!("{:?}", e);
+        }
+    }
+
+    Ok(())
+}
+
+#[command]
+#[description = "Meme From Meme-Api"]
+async fn meme(ctx: &Context, msg: &Message) -> CommandResult {
+    msg.channel_id.broadcast_typing(&ctx).await.handle_result();
+
+    match meme::get_meme().await {
+        Ok(url) => {
+            msg.channel_id
+                .send_message(&ctx, |m| m.embed(|e| e.image(url)))
+                .await
+                .handle_result();
+        }
+        Err(e) => {
+            error!("{:?}", e);
+        }
+    }
+
+    Ok(())
+}
+
+#[command]
 #[description = "Get Server Information: User should have Admin role"]
 #[allowed_roles("Admin")]
-async fn details(ctx: &Context,msg: &Message) -> CommandResult {
+async fn details(ctx: &Context, msg: &Message) -> CommandResult {
     msg.channel_id.broadcast_typing(&ctx).await.handle_result();
 
     let server = msg.guild(&ctx.cache).unwrap();
@@ -47,7 +89,8 @@ async fn details(ctx: &Context,msg: &Message) -> CommandResult {
                 }
             })
         })
-        .await.handle_result();
+        .await
+        .handle_result();
 
     let mut message = String::new();
     for member in members.into_values() {

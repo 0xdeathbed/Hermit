@@ -8,11 +8,15 @@ pub struct MemeApi {
     pub preview: Vec<String>,
 }
 
-pub async fn meme_from_api()  -> Result<MemeApi, Error> {
+pub async fn meme_from_api() -> Result<MemeApi, Error> {
     let url = "https://meme-api.com/gimme";
 
     let resp = Client::new()
-        .get(url).send().await?.json::<MemeApi>().await?;
+        .get(url)
+        .send()
+        .await?
+        .json::<MemeApi>()
+        .await?;
 
     Ok(resp)
 }
