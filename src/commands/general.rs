@@ -63,6 +63,7 @@ async fn meme(ctx: &Context, msg: &Message) -> CommandResult {
 
 #[command]
 #[description = "Get Server Information: User should have Admin role"]
+#[only_in(guilds)]
 #[allowed_roles("Admin")]
 async fn details(ctx: &Context, msg: &Message) -> CommandResult {
     msg.channel_id.broadcast_typing(&ctx).await.handle_result();
