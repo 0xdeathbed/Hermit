@@ -1,23 +1,23 @@
 mod bot;
 mod commands;
-mod services;
 mod helper;
+mod services;
+
+use std::net::SocketAddr;
 
 use anyhow::anyhow;
 use bot::Bot;
-use serenity::framework::StandardFramework;
 use serenity::prelude::*;
-use shuttle_secrets::SecretStore;
+use serenity::{async_trait, framework::StandardFramework};
+use shuttle_runtime::{CustomError, SecretStore, Secrets, Service};
 use songbird::SerenityInit;
 
-use commands::general::GENERAL_GROUP;
-use commands::help::MY_HELP;
-use commands::music::MUSIC_GROUP;
+use commands::{general::GENERAL_GROUP, help::MY_HELP, music::MUSIC_GROUP};
 
 #[shuttle_runtime::main]
 async fn serenity(
-    #[shuttle_secrets::Secrets] secret_store: SecretStore,
-) -> shuttle_serenity::ShuttleSerenity {
+    #[Secrets] secret_store: SecretStore,
+) -> Result<MyService, shuttle_runtime::Error> {
     // Get the discord token set in `Secrets.toml`
     let token = if let Some(token) = secret_store.get("DISCORD_TOKEN") {
         token
@@ -35,12 +35,12 @@ async fn serenity(
     let framework = StandardFramework::new()
         .help(&MY_HELP)
         .configure(|c| {
-                c.with_whitespace(true).prefixes(vec!["Hermit ", "hermit ", "Ht ", "ht "])
+            c.with_whitespace(true)
+                .prefixes(vec!["Hermit ", "hermit ", "Ht ", "ht "])
         })
         .help(&MY_HELP)
         .group(&GENERAL_GROUP)
         .group(&MUSIC_GROUP);
-
 
     let client = Client::builder(&token, intents)
         .event_handler(Bot)
@@ -49,5 +49,17 @@ async fn serenity(
         .await
         .expect("Err creating client");
 
-    Ok(client.into())
+    // Ok(client.into())
+    Ok(MyService(client))
+}
+
+struct MyService(pub Client);
+
+#[async_trait]
+impl Service for MyService {
+    async fn bind(mut self, _adrr: SocketAddr) -> Result<(), shuttle_runtime::Error> {
+        self.0.start_autosharded().await.map_err(CustomError::new)?;
+
+        Ok(())
+    }
 }
