@@ -13,6 +13,7 @@ serenity = { version = "0.12", default-features = false, features = [
     "client", "gateway", "rustls_backend", "model","cache","builder","voice"
 ]}
 songbird = "0.5.0"
+symphonia = { version = "0.5", features = ["aac", "mp3", "isomp4", "alac"]}
 tokio = { version = "1.26.0", features = ["macros", "rt-multi-thread", "signal"] }
 tracing = { version = "0.1.41", features = ["log"] }
 tracing-subscriber = "0.3.19"
