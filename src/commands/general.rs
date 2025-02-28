@@ -1,38 +1,25 @@
-use crate::helper::SerenityErrorHandler;
 use crate::services::joke;
 use crate::services::meme;
-use serenity::framework::standard::macros::{command, group};
-use serenity::framework::standard::CommandResult;
-use serenity::model::channel::Message;
-use serenity::model::Timestamp;
-use serenity::prelude::Context;
-use serenity::utils::Color;
+use crate::{Context, Error};
+use poise::command;
+use poise::CreateReply;
+use serenity::all::Colour;
+use serenity::all::CreateEmbed;
+use serenity::all::Timestamp;
 use tracing::error;
 
-#[group]
-#[commands(ping, details, joke, meme)]
-struct General;
-
-#[command]
-#[description = "Reply With Pong!"]
-async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.channel_id.broadcast_typing(&ctx).await.handle_result();
-    msg.reply(ctx, "Pong!").await.handle_result();
-
+/// Reply `Pong!`
+#[command(prefix_command, slash_command, broadcast_typing)]
+pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
+    ctx.reply("Pong!").await?;
     Ok(())
 }
 
-#[command]
-#[description = "Joke From JokeApi"]
-async fn joke(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.channel_id.broadcast_typing(&ctx).await.handle_result();
-
+/// Fetch a joke From JokeApi
+#[command(prefix_command, slash_command, broadcast_typing)]
+pub async fn joke(ctx: Context<'_>) -> Result<(), Error> {
     match joke::joke_from_joke_api().await {
-        Ok(joke_resp) => msg
-            .channel_id
-            .say(ctx, joke_resp.joke)
-            .await
-            .handle_result(),
+        Ok(joke_resp) => _ = ctx.say(joke_resp.joke).await?,
         Err(e) => {
             error!("{:?}", e);
         }
@@ -41,17 +28,13 @@ async fn joke(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
-#[command]
-#[description = "Meme From Meme-Api"]
-async fn meme(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.channel_id.broadcast_typing(&ctx).await.handle_result();
-
+/// Fetch a meme From Meme-Api
+#[command(prefix_command, slash_command, broadcast_typing)]
+pub async fn meme(ctx: Context<'_>) -> Result<(), Error> {
     match meme::get_meme().await {
         Ok(url) => {
-            msg.channel_id
-                .send_message(&ctx, |m| m.embed(|e| e.image(url)))
-                .await
-                .handle_result();
+            ctx.send(CreateReply::default().embed(CreateEmbed::new().image(url)))
+                .await?;
         }
         Err(e) => {
             error!("{:?}", e);
@@ -61,37 +44,35 @@ async fn meme(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
-#[command]
-#[description = "Get Server Information: User should have Admin role"]
-#[only_in(guilds)]
-#[allowed_roles("Admin")]
-async fn details(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.channel_id.broadcast_typing(&ctx).await.handle_result();
-
-    let server = msg.guild(&ctx.cache).unwrap();
+// #[allowed_roles("Admin")]
+/// Get Server Information: User should have Admin role
+#[command(prefix_command, slash_command, broadcast_typing, guild_only)]
+pub async fn details(ctx: Context<'_>) -> Result<(), Error> {
+    let server = ctx.guild().unwrap().clone();
     let server_name = &server.name;
-    let thumbnail = &server.icon_url();
-    let owner = server.owner_id.to_user(&ctx.http).await?;
-    let members = server.members;
+    let thumbnail = server.icon_url();
+    let owner = server.owner_id;
+    let owner = owner.to_user(ctx).await?;
+    let members = server.members.clone();
     let members_count = members.len();
 
-    msg.channel_id
-        .send_message(ctx, |m| {
-            m.embed(|e| {
-                e.title(format!("{} Info:", server_name))
-                    .field("Owner", owner.name, false)
-                    .field("Server ID", server.id.0, false)
-                    .field("Member Count", members_count, false)
-                    .color(Color::FABLED_PINK);
-                if let Some(url) = thumbnail {
-                    e.thumbnail(url)
-                } else {
-                    e
-                }
-            })
-        })
-        .await
-        .handle_result();
+    ctx.send(CreateReply::default().embed({
+        let e = CreateEmbed::new()
+            .title(format!("{} Info: ", server_name))
+            .fields(vec![
+                ("Owner", owner.name, false),
+                ("Server ID", server.id.to_string(), false),
+                ("Memeber Count", members_count.to_string(), false),
+            ])
+            .color(Colour::FABLED_PINK);
+
+        if let Some(url) = thumbnail {
+            e.thumbnail(url)
+        } else {
+            e
+        }
+    }))
+    .await?;
 
     let mut message = String::new();
     for member in members.into_values() {
@@ -104,9 +85,7 @@ async fn details(ctx: &Context, msg: &Message) -> CommandResult {
 
         message.push_str(&content);
     }
-    msg.channel_id
-        .send_message(ctx, |m| m.content(message))
-        .await?;
+    ctx.send(CreateReply::default().content(message)).await?;
 
     Ok(())
 }

@@ -1,26 +1,24 @@
-use serenity::model::channel::Message;
-use serenity::{
-    framework::standard::{
-        help_commands, macros::help, Args, CommandGroup, CommandResult, HelpOptions,
-    },
-    model::prelude::UserId,
-    prelude::Context,
-};
-use std::collections::HashSet;
-
+use crate::{Context, Error};
+use poise::command;
 
 // Help Command: Give info about all commands provided by bot
-#[help]
-pub async fn my_help(
-    ctx: &Context,
-    msg: &Message,
-    args: Args,
-    options: &'static HelpOptions,
-    groups: &[&'static CommandGroup],
-    owners: HashSet<UserId>,
-) -> CommandResult {
+#[command(prefix_command, slash_command)]
+pub async fn help(
+    ctx: Context<'_>,
+    #[description = "Specific command to show help about"]
+    #[autocomplete = "poise::builtins::autocomplete_command"]
+    command: Option<String>,
+) -> Result<(), Error> {
+    ctx.channel_id().broadcast_typing(&ctx).await?;
 
-    msg.channel_id.broadcast_typing(&ctx).await?;
-    help_commands::with_embeds(ctx, msg, args, options, groups, owners).await?;
+    poise::builtins::help(
+        ctx,
+        command.as_deref(),
+        poise::builtins::HelpConfiguration {
+            extra_text_at_bottom: "___",
+            ..Default::default()
+        },
+    )
+    .await?;
     Ok(())
 }

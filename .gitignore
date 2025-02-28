@@ -1,4 +1,3 @@
 target*
-.shuttle-storage
-Secrets*.toml
-dep-installer-hack/Cargo.lock
+Cargo.lock
+.env

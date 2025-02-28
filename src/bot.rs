@@ -1,11 +1,13 @@
-use crate::helper::SerenityErrorHandler;
+use serenity::all::{ActivityData, CreateMessage};
 use serenity::model::channel::Message;
 use serenity::model::gateway::Ready;
-use serenity::model::prelude::{Activity, Member};
+use serenity::model::prelude::Member;
 use serenity::model::voice::VoiceState;
 use serenity::prelude::*;
 use serenity::{async_trait, model::user::OnlineStatus};
 use tracing::{error, info};
+
+use crate::helper::SerenityErrorHandler;
 
 pub struct Bot;
 
@@ -15,9 +17,9 @@ impl EventHandler for Bot {
         info!("{} is connected!", ready.user.name);
 
         // Set Presence of Bot
-        let activity = Activity::listening("hermit help");
+        let activity = ActivityData::listening("hermit help");
         let status = OnlineStatus::Idle;
-        ctx.set_presence(Some(activity), status).await;
+        ctx.set_presence(Some(activity), status);
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
@@ -34,7 +36,7 @@ impl EventHandler for Bot {
             let message = format!("{} Joined In.", new_member.mention());
             channel
                 .id
-                .send_message(ctx, |m| m.content(message))
+                .send_message(ctx, CreateMessage::new().content(message))
                 .await
                 .handle_result();
         }
@@ -54,9 +56,9 @@ impl EventHandler for Bot {
         };
 
         if let Some(channel_id) = channel_id {
-            let channel = ctx.http.get_channel(channel_id.0).await.unwrap();
+            let channel = ctx.http.get_channel(channel_id.0.into()).await.unwrap();
 
-            let channel_members = channel.guild().unwrap().members(&ctx.cache).await.unwrap();
+            let channel_members = channel.guild().unwrap().members(&ctx.cache).unwrap();
 
             let mut has_any_user = false;
             for member in channel_members {
@@ -67,8 +69,8 @@ impl EventHandler for Bot {
             }
 
             if !has_any_user {
-                if let Some(handle) =  manager.get(guild_id) {
-                    handle.lock().await.stop(); // Stop Playing is anything
+                if let Some(handle) = manager.get(guild_id) {
+                    handle.lock().await.stop(); // Stop Playing  anything
                 }
 
                 if let Err(e) = manager.remove(guild_id).await {
